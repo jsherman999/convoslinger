@@ -8,6 +8,22 @@
   },
   "convos": [
     {
+      "id": "2026-08-22-yes-almost-all-modern-floating-docks-are-sectional-and-8-foo",
+      "title": "Yes — almost all modern floating docks are sectional, and 8-foot is on…",
+      "synopsis": "Floating doc options",
+      "date": "2026-08-22",
+      "tags": [],
+      "path": "convos/2026-08-22-yes-almost-all-modern-floating-docks-are-sectional-and-8-foo.html",
+      "visible": true,
+      "pinned": false,
+      "source": "claude-app",
+      "added": "2026-08-22T03:26:07+00:00",
+      "format": "markdown",
+      "source_file": "sources/2026-08-22-yes-almost-all-modern-floating-docks-are-sectional-and-8-foo.md",
+      "raw_html": false,
+      "include_thinking": false
+    },
+    {
       "id": "2026-08-22-bioinformatics",
       "title": "Bioinformatics",
       "synopsis": "That reframes it usefully — a Costa Rica field course with insects, plants, and bats almost certainly means DNA barcoding, not genome assembly. That's good news: it's the most tractable corner of bioinformatics, and Biopython is unusually…",
