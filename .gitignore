@@ -1,5 +1,2 @@
-__pycache__/
-*.pyc
 .DS_Store
 inbox/imported/
-.manage-token
