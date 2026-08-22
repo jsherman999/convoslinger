@@ -32,15 +32,17 @@ cd convoslinger
 ./convo manage                                 # open the management app
 ```
 
-There is nothing to switch on. The `Deploy site` workflow enables GitHub
-Pages for the repository on its first run and publishes `docs/`, so pushing is
-publishing from then on.
+One setup step, once: **Settings → Pages → Source: GitHub Actions**. From then
+on the `Deploy site` workflow publishes `docs/` on every push to the default
+branch, and pushing is publishing.
 
-<sub>If that first run fails to enable Pages — an org policy can block a
-workflow from doing it — turn it on once by hand under **Settings → Pages**
-(*Source: GitHub Actions*) and re-run the workflow. That page is web only; the
-GitHub mobile app doesn't expose repository settings, but a phone browser works
-fine.</sub>
+<sub>That one toggle can't be automated. Creating a Pages site requires
+`administration:write`, a scope the workflow's `GITHUB_TOKEN` cannot hold, so
+`actions/configure-pages` with `enablement: true` fails with *Resource not
+accessible by integration*. Deploying to a site that already exists only needs
+`pages:write`, which the workflow has. The settings page is web only — the
+GitHub mobile app doesn't expose repository settings — but it works fine in a
+phone browser.</sub>
 
 ---
 

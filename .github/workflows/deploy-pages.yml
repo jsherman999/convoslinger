@@ -1,8 +1,11 @@
 # Publishes docs/ to GitHub Pages.
 #
-# The first run enables Pages for the repository by itself (configure-pages
-# with enablement: true), so there is nothing to switch on in Settings. After
-# that, every push to the default branch that touches docs/ redeploys.
+# One-time setup: Settings -> Pages -> Source: **GitHub Actions**. That has to
+# be done by a human, because creating a Pages site needs administration:write
+# and the workflow's GITHUB_TOKEN cannot hold that scope (configure-pages'
+# `enablement: true` fails with "Resource not accessible by integration").
+# Deploying to a site that already exists only needs pages:write, which is why
+# every push after that toggle works unattended.
 name: Deploy site
 
 on:
@@ -33,10 +36,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Enable and configure Pages
+      # Fails with "Get Pages site failed ... Not Found" until Pages is set to
+      # GitHub Actions in Settings; see the note at the top of this file.
+      - name: Configure Pages
         uses: actions/configure-pages@v5
-        with:
-          enablement: true
 
       - name: Upload docs/ as the site
         uses: actions/upload-pages-artifact@v3
