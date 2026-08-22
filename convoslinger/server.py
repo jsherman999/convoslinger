@@ -24,7 +24,7 @@ from urllib.parse import parse_qs, unquote, urlparse
 
 from . import gitops
 from . import manifest as mf
-from . import site, summarize
+from . import parse, render, site, summarize
 from .paths import DOCS, ROOT, STATIC
 
 MAX_BODY = 24 * 1024 * 1024  # a very long transcript is still only a few MB
@@ -154,6 +154,14 @@ class Handler(BaseHTTPRequestHandler):
             return self._file(STATIC / path.lstrip("/"))
         if path == "/api/state":
             return self._json(self.state())
+        if path.startswith("/preview/"):
+            return self.preview(path[len("/preview/"):])
+        if path.startswith("/assets/"):
+            # So a /preview/<id> page can resolve its ../assets/style.css.
+            target = (DOCS / path.lstrip("/")).resolve()
+            if not str(target).startswith(str((DOCS / "assets").resolve())):
+                return self.send_error(403)
+            return self._file(target)
         if path.startswith("/site/"):
             target = (DOCS / path[len("/site/"):]).resolve()
             if not str(target).startswith(str(DOCS.resolve())):
@@ -189,6 +197,34 @@ class Handler(BaseHTTPRequestHandler):
             return self._json({"error": f"{type(exc).__name__}: {exc}"}, 500)
 
     # ---- handlers -------------------------------------------------------
+
+    def preview(self, convo_id: str):
+        """Render a conversation on demand, including hidden ones.
+
+        Hidden conversations have no page under docs/ by design, so this is the
+        only way to read one back before deciding to publish it. Nothing is
+        written to disk.
+        """
+        manifest = mf.load()
+        entry = mf.find(manifest, convo_id)
+        if not entry:
+            return self.send_error(404)
+        source = site.source_path(entry)
+        if not source.exists():
+            return self.send_error(404, "source file is missing")
+        text = source.read_text(encoding="utf-8", errors="replace")
+        if entry.get("format") == "html":
+            page = text
+        else:
+            turns = parse.parse(text, source.name, entry.get("include_thinking", False))
+            page = render.render_convo_page(entry, turns, manifest["site"])
+        body = page.encode("utf-8")
+        self.send_response(200)
+        self.send_header("Content-Type", "text/html; charset=utf-8")
+        self.send_header("Content-Length", str(len(body)))
+        self.send_header("Cache-Control", "no-store")
+        self.end_headers()
+        self.wfile.write(body)
 
     def state(self) -> dict:
         manifest = mf.load()

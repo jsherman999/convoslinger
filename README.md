@@ -143,7 +143,10 @@ What you can do without touching code:
 - **Add a conversation** — drop a file or paste text, set title / date / tags /
   synopsis, choose whether it publishes immediately.
 - **Conversations** — for each one: `shown`, `pinned`, title, synopsis, date,
-  tags, reorder, preview the real page (`↗`), delete (`✕`).
+  tags, reorder, delete (`✕`), and `↗` to read it: the published page if it's
+  shown, or a rendered-on-demand preview if it's hidden. That preview is the
+  point of importing hidden first — you get to see exactly what would go public
+  before it does, and nothing is written to `docs/` until you publish.
 - **Save & rebuild** — writes `docs/convos.json` and regenerates every page.
 - **Publish** — `git add` / `commit` / `push` on the current branch. The top
   bar tells you how many files are waiting.

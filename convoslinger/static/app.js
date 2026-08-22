@@ -125,9 +125,12 @@ function renderList() {
     row.querySelector('[data-field="date"]').value = convo.date || '';
     row.querySelector('[data-field="tags"]').value = (convo.tags || []).join(', ');
 
+    // Published pages are served from docs/; hidden ones are rendered on the
+    // fly, so you can always read one back before deciding to publish it.
     const open = row.querySelector('[data-act="open"]');
-    if (convo.visible) open.href = '/site/' + convo.path + (TOKEN ? '?k=' + encodeURIComponent(TOKEN) : '');
-    else open.setAttribute('aria-disabled', 'true');
+    const key = TOKEN ? '?k=' + encodeURIComponent(TOKEN) : '';
+    open.href = (convo.visible ? '/site/' + convo.path : '/preview/' + convo.id) + key;
+    open.title = convo.visible ? 'open the published page' : 'preview this draft';
 
     row.querySelector('[data-field="visible"]').onchange = (e) => {
       convo.visible = e.target.checked;
