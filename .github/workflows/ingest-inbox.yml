@@ -1,8 +1,8 @@
 # Turns anything pushed into inbox/ on this branch into a hidden draft.
 #
 # This branch holds only content, so the workflow checks the app out beside it:
-# the app lands in app/, this branch lands in app/content/, which is exactly the
-# layout convoslinger expects (see convoslinger/paths.py).
+# the app (the repo's default branch) lands in app/, this branch lands in
+# app/content/ — exactly the layout convoslinger resolves its content root to.
 name: Ingest inbox
 
 on:
@@ -18,9 +18,6 @@ concurrency:
   group: ingest-inbox
   cancel-in-progress: false
 
-env:
-  APP_BRANCH: main
-
 jobs:
   ingest:
     runs-on: ubuntu-latest
@@ -28,7 +25,7 @@ jobs:
       - name: Check out the app
         uses: actions/checkout@v4
         with:
-          ref: ${{ env.APP_BRANCH }}
+          ref: ${{ github.event.repository.default_branch }}
           path: app
 
       - name: Check out this content branch beside it

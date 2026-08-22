@@ -12,8 +12,10 @@ The app that generates it lives on the `main` branch.
 | `sources/` | the raw exports every page is generated from |
 | `inbox/` | conversations dropped in from a phone, awaiting import |
 
-GitHub Pages serves `docs/` from this branch. Everything under `docs/` is
-generated from `sources/` plus `docs/convos.json` — don't hand-edit it; run
+GitHub Pages serves `docs/` from this branch directly (Settings → Pages →
+*Deploy from a branch* → `site` → `/docs`). No workflow is involved in
+deploying: pushing here is publishing. Everything under `docs/` is generated
+from `sources/` plus `docs/convos.json` — don't hand-edit it; run
 `./convo build` from the app checkout instead.
 
 The split exists so that publishing a conversation and changing the app's code
