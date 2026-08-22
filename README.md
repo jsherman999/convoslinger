@@ -33,8 +33,12 @@ cd convoslinger
 ```
 
 Then, once, in the repo's **Settings → Pages**, set *Source* to
-**Deploy from a branch**, branch `main`, folder **`/docs`**. Pushing is
-publishing from then on.
+**Deploy from a branch**, pick the branch you push to (whatever your default
+branch is), and set the folder to **`/docs`**. Pushing is publishing from then
+on.
+
+That settings page is web only — the GitHub mobile app doesn't expose
+repository settings — but it works fine in a phone browser.
 
 ---
 
