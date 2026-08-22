@@ -153,6 +153,33 @@ What you can do without touching code:
 
 <sub>The app never writes anywhere except `docs/`, `sources/`, and `inbox/`.</sub>
 
+### Using it from your phone
+
+```bash
+./convo manage --lan
+```
+
+That binds to every interface instead of loopback and prints the URLs to open,
+including your Mac's Bonjour name (`http://your-mac.local:7788/?k=…`), which
+survives a DHCP lease change in a way the IP doesn't. macOS will ask whether to
+allow incoming connections for `python3` the first time — say yes. Both
+machines have to be on the same network; this is a LAN thing, not something
+reachable from outside the house.
+
+Because anyone who can reach the app can publish to your public site, `--lan`
+requires a token. It's generated once, stored in `.manage-token` (gitignored),
+and included in the printed URL, so bookmark that URL on the phone and it keeps
+working across restarts. The server also sets it as a cookie on first visit.
+`--new-token` rotates it and invalidates the old bookmark.
+
+Loopback is unchanged: plain `./convo manage` needs no token, since only your
+Mac can reach it. `--host <address>` binds somewhere specific if you'd rather
+not listen on all interfaces.
+
+<sub>The token is the only thing standing between your LAN and your published
+site, and it travels over plain HTTP — fine on a home network, not something to
+run on café wifi. Stop the server when you're done rather than leaving it up.</sub>
+
 ---
 
 ## How it fits together
@@ -212,6 +239,9 @@ page before publishing either way: a scanner catches patterns, not judgement.
 ./convo inbox            list inbox files    (--take <file>|all, --hidden)
 ./convo publish -m "…"   build, commit, push
 ./convo manage           the management app  (--port, --no-open)
+                           --lan             serve to the LAN, token required
+                           --host <addr>     bind somewhere specific
+                           --new-token       rotate the LAN token
 ./convo summary <id>     ask Claude for a title/synopsis (--apply to save)
 ```
 

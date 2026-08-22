@@ -143,7 +143,12 @@ def cmd_publish(args) -> int:
 def cmd_manage(args) -> int:
     from .server import serve
 
-    serve(port=args.port, open_browser=not args.no_open)
+    serve(
+        port=args.port,
+        host="0.0.0.0" if args.lan else args.host,
+        open_browser=not args.no_open,
+        rotate_token=args.new_token,
+    )
     return 0
 
 
@@ -232,6 +237,9 @@ def build_parser() -> argparse.ArgumentParser:
 
     manage = sub.add_parser("manage", help="open the management app in a browser")
     manage.add_argument("--port", type=int, default=7788)
+    manage.add_argument("--host", default="127.0.0.1", help="bind address")
+    manage.add_argument("--lan", action="store_true", help="serve to the LAN (phone), token required")
+    manage.add_argument("--new-token", action="store_true", help="rotate the LAN token")
     manage.add_argument("--no-open", action="store_true")
     manage.set_defaults(func=cmd_manage)
 

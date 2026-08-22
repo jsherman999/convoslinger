@@ -4,10 +4,18 @@ const $ = (sel) => document.querySelector(sel);
 let state = { site: {}, convos: [], inbox: [], git: {}, ai: {} };
 let pending = null; // {filename, content} staged for import
 
+// On the LAN the server issues a token; it arrives as ?k= and is mirrored into
+// a cookie. Send it explicitly too, so a browser that drops the cookie still works.
+const TOKEN = (new URLSearchParams(location.search).get('k'))
+  || (document.cookie.match(/(?:^|;\s*)convoslinger_token=([^;]+)/) || [])[1]
+  || '';
+
 async function api(path, body) {
+  const headers = { 'Content-Type': 'application/json', 'X-Convoslinger': '1' };
+  if (TOKEN) headers['X-Convoslinger-Token'] = TOKEN;
   const res = await fetch(path, {
     method: body ? 'POST' : 'GET',
-    headers: { 'Content-Type': 'application/json', 'X-Convoslinger': '1' },
+    headers,
     body: body ? JSON.stringify(body) : undefined,
   });
   const data = await res.json().catch(() => ({ error: `HTTP ${res.status}` }));
@@ -118,7 +126,7 @@ function renderList() {
     row.querySelector('[data-field="tags"]').value = (convo.tags || []).join(', ');
 
     const open = row.querySelector('[data-act="open"]');
-    if (convo.visible) open.href = '/site/' + convo.path;
+    if (convo.visible) open.href = '/site/' + convo.path + (TOKEN ? '?k=' + encodeURIComponent(TOKEN) : '');
     else open.setAttribute('aria-disabled', 'true');
 
     row.querySelector('[data-field="visible"]').onchange = (e) => {
@@ -298,6 +306,7 @@ $('#ai-new').onclick = describeNew;
 $('#save').onclick = save;
 $('#publish').onclick = publish;
 $('#new-date').value = new Date().toISOString().slice(0, 10);
+if (TOKEN) $('#preview-site').href = '/site/index.html?k=' + encodeURIComponent(TOKEN);
 
 const drop = $('#drop');
 ['dragenter', 'dragover'].forEach((type) =>

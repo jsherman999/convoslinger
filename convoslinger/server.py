@@ -1,27 +1,72 @@
-"""The management app: a small local web UI for deciding what the site shows.
+"""The management app: a small web UI for deciding what the site shows.
 
-Binds to 127.0.0.1 only. Every mutating request must carry the
+Binds to 127.0.0.1 by default. Every mutating request must carry the
 `X-Convoslinger: 1` header, which forces a CORS preflight that this server
-never answers — so a random web page you have open cannot drive it.
+never answers — so a random web page you have open cannot drive it. Requests
+carrying an `Origin` must also match the `Host` they were sent to.
+
+Serving to the LAN (`--host 0.0.0.0`, for editing from a phone) additionally
+requires a token on every request, because anyone who can reach the app can
+publish to your public site. The token is generated once and kept in
+`.manage-token` so a bookmarked URL keeps working across restarts.
 """
 
+import http.cookies
 import json
 import mimetypes
+import os
+import secrets
+import socket
 import threading
 import webbrowser
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
-from urllib.parse import unquote, urlparse
+from urllib.parse import parse_qs, unquote, urlparse
 
 from . import gitops
 from . import manifest as mf
 from . import site, summarize
-from .paths import DOCS, STATIC
+from .paths import DOCS, ROOT, STATIC
 
 MAX_BODY = 24 * 1024 * 1024  # a very long transcript is still only a few MB
+COOKIE = "convoslinger_token"
+TOKEN_FILE = ROOT / ".manage-token"
+LOOPBACK = ("127.0.0.1", "localhost", "::1")
+
+
+def load_token(rotate: bool = False) -> str:
+    """A stable per-checkout token, so a bookmarked phone URL keeps working."""
+    if TOKEN_FILE.exists() and not rotate:
+        existing = TOKEN_FILE.read_text(encoding="utf-8").strip()
+        if existing:
+            return existing
+    token = secrets.token_urlsafe(18)
+    TOKEN_FILE.write_text(token + "\n", encoding="utf-8")
+    os.chmod(TOKEN_FILE, 0o600)
+    return token
+
+
+def lan_urls(port: int, token: str) -> list[str]:
+    """Best-effort addresses this Mac is reachable at from a phone."""
+    query = f"?k={token}" if token else ""
+    urls = []
+    probe = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    try:
+        probe.connect(("192.0.2.1", 9))  # no packets sent; just picks a route
+        urls.append(f"http://{probe.getsockname()[0]}:{port}/{query}")
+    except OSError:
+        pass
+    finally:
+        probe.close()
+    name = socket.gethostname()
+    if name and name not in ("localhost",):
+        host = name if "." in name else f"{name}.local"  # Bonjour, on a Mac
+        urls.append(f"http://{host}:{port}/{query}")
+    return urls
 
 
 class Handler(BaseHTTPRequestHandler):
     server_version = "convoslinger"
+    TOKEN = ""  # empty = loopback only, no token required
 
     # ---- plumbing -------------------------------------------------------
 
@@ -36,7 +81,7 @@ class Handler(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(body)
 
-    def _file(self, path, fallback_type: str = "text/plain") -> None:
+    def _file(self, path, fallback_type: str = "text/plain", set_cookie: bool = False) -> None:
         if not path.exists() or not path.is_file():
             self.send_error(404)
             return
@@ -46,15 +91,44 @@ class Handler(BaseHTTPRequestHandler):
         self.send_header("Content-Type", f"{ctype}; charset=utf-8" if ctype.startswith("text/") else ctype)
         self.send_header("Content-Length", str(len(body)))
         self.send_header("Cache-Control", "no-store")
+        if set_cookie and Handler.TOKEN:
+            # So the phone keeps working after navigating away from the ?k= URL.
+            self.send_header(
+                "Set-Cookie",
+                f"{COOKIE}={Handler.TOKEN}; Path=/; SameSite=Strict; Max-Age=31536000",
+            )
         self.end_headers()
         self.wfile.write(body)
 
+    def _token_ok(self) -> bool:
+        """Token from the header, the ?k= query, or the cookie set on first visit."""
+        if not Handler.TOKEN:
+            return True
+        if self.headers.get("X-Convoslinger-Token") == Handler.TOKEN:
+            return True
+        if parse_qs(urlparse(self.path).query).get("k", [""])[0] == Handler.TOKEN:
+            return True
+        raw = self.headers.get("Cookie")
+        if raw:
+            jar = http.cookies.SimpleCookie()
+            jar.load(raw)
+            if COOKIE in jar and jar[COOKIE].value == Handler.TOKEN:
+                return True
+        return False
+
+    def _same_origin(self) -> bool:
+        """A cross-site POST would carry an Origin that isn't the Host we answer on."""
+        origin = self.headers.get("Origin")
+        return not origin or urlparse(origin).netloc == self.headers.get("Host", "")
+
     def _read_json(self):
+        if not self._token_ok():
+            self._json({"error": "bad or missing token"}, 403)
+            return None
         if self.headers.get("X-Convoslinger") != "1":
             self._json({"error": "missing X-Convoslinger header"}, 403)
             return None
-        origin = self.headers.get("Origin")
-        if origin and urlparse(origin).hostname not in ("127.0.0.1", "localhost"):
+        if not self._same_origin():
             self._json({"error": "bad origin"}, 403)
             return None
         length = int(self.headers.get("Content-Length") or 0)
@@ -71,8 +145,11 @@ class Handler(BaseHTTPRequestHandler):
 
     def do_GET(self):
         path = unquote(urlparse(self.path).path)
+        if not self._token_ok():
+            self.send_error(403, "Open the URL printed by `./convo manage`, token included")
+            return None
         if path == "/":
-            return self._file(STATIC / "index.html")
+            return self._file(STATIC / "index.html", set_cookie=True)
         if path in ("/app.js", "/style.css"):
             return self._file(STATIC / path.lstrip("/"))
         if path == "/api/state":
@@ -206,12 +283,29 @@ class Handler(BaseHTTPRequestHandler):
         return self._json({"ok": True, **summarize.describe(text)})
 
 
-def serve(port: int = 7788, open_browser: bool = True) -> None:
-    httpd = ThreadingHTTPServer(("127.0.0.1", port), Handler)
-    url = f"http://127.0.0.1:{port}/"
-    print(f"convoslinger manager on {url}   (ctrl-c to stop)")
+def serve(
+    port: int = 7788,
+    host: str = "127.0.0.1",
+    open_browser: bool = True,
+    rotate_token: bool = False,
+) -> None:
+    exposed = host not in LOOPBACK
+    Handler.TOKEN = load_token(rotate_token) if exposed else ""
+
+    httpd = ThreadingHTTPServer((host, port), Handler)
+    local = f"http://127.0.0.1:{port}/"
+
+    print("convoslinger manager   (ctrl-c to stop)")
+    print(f"  this mac   {local}")
+    if exposed:
+        for url in lan_urls(port, Handler.TOKEN):
+            print(f"  lan        {url}")
+        print(f"\n  Anyone who opens a lan URL can edit and publish your site.")
+        print(f"  Token is in .manage-token — `--new-token` rotates it.")
+        print(f"  macOS may ask to allow incoming connections for python3; say yes.")
+
     if open_browser:
-        threading.Timer(0.4, lambda: webbrowser.open(url)).start()
+        threading.Timer(0.4, lambda: webbrowser.open(local)).start()
     try:
         httpd.serve_forever()
     except KeyboardInterrupt:

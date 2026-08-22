@@ -169,8 +169,24 @@ label input, label textarea, label select { margin-top: 0.3rem; }
 }
 .toast.bad { border-left-color: var(--danger); }
 
+/* Phone: nothing may force the body wider than the viewport. The long branch
+   name in the top bar was doing exactly that. */
 @media (max-width: 720px) {
+  main { padding: 1rem 0.9rem 5rem; }
   .grid-2 { grid-template-columns: 1fr; }
   .convo-foot { grid-template-columns: 1fr; }
-  .bar { flex-wrap: wrap; }
+  .panel { padding: 0.9rem 0.9rem 1rem; }
+
+  .bar { flex-wrap: wrap; gap: 0.5rem 0.75rem; padding: 0.6rem 0.9rem; }
+  .bar-meta { order: 3; width: 100%; min-width: 0; overflow-wrap: anywhere; }
+  .bar-actions { margin-left: auto; flex-wrap: wrap; }
+
+  .convo-head { flex-wrap: wrap; gap: 0.5rem 0.75rem; }
+  .convo-head .spacer { display: none; }
+  .convo .id { max-width: 100%; min-width: 0; }
+  .icon { padding: 0.35rem 0.55rem; }  /* easier to hit with a thumb */
+
+  .checks { gap: 0.5rem; }
+  .row-actions { flex-wrap: wrap; }
+  .inbox-item { flex-wrap: wrap; }
 }
