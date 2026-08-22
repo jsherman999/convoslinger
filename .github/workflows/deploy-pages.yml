@@ -1,0 +1,48 @@
+# Publishes docs/ to GitHub Pages.
+#
+# The first run enables Pages for the repository by itself (configure-pages
+# with enablement: true), so there is nothing to switch on in Settings. After
+# that, every push to the default branch that touches docs/ redeploys.
+name: Deploy site
+
+on:
+  push:
+    paths:
+      - "docs/**"
+      - ".github/workflows/deploy-pages.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Never let two deploys race; let an in-flight one finish rather than cancel it.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    # Whatever the default branch is called — survives renaming it to main.
+    if: github.ref_name == github.event.repository.default_branch
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Enable and configure Pages
+        uses: actions/configure-pages@v5
+        with:
+          enablement: true
+
+      - name: Upload docs/ as the site
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: docs
+
+      - name: Deploy
+        id: deploy
+        uses: actions/deploy-pages@v4

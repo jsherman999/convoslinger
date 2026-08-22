@@ -32,13 +32,15 @@ cd convoslinger
 ./convo manage                                 # open the management app
 ```
 
-Then, once, in the repo's **Settings → Pages**, set *Source* to
-**Deploy from a branch**, pick the branch you push to (whatever your default
-branch is), and set the folder to **`/docs`**. Pushing is publishing from then
-on.
+There is nothing to switch on. The `Deploy site` workflow enables GitHub
+Pages for the repository on its first run and publishes `docs/`, so pushing is
+publishing from then on.
 
-That settings page is web only — the GitHub mobile app doesn't expose
-repository settings — but it works fine in a phone browser.
+<sub>If that first run fails to enable Pages — an org policy can block a
+workflow from doing it — turn it on once by hand under **Settings → Pages**
+(*Source: GitHub Actions*) and re-run the workflow. That page is web only; the
+GitHub mobile app doesn't expose repository settings, but a phone browser works
+fine.</sub>
 
 ---
 
@@ -97,6 +99,11 @@ The `Ingest inbox` GitHub Action then converts anything landing in `inbox/`
 into a **hidden** draft and commits it. Hidden means exactly that: it is not on
 the index and its page is not generated. You review it on the Mac and flip it
 to shown when you want it public.
+
+One wrinkle: commits pushed by a workflow don't trigger other workflows, so
+an ingested draft won't redeploy the site on its own. That's harmless — drafts
+are hidden and don't change any published page — and your next push, or a
+manual run of `Deploy site`, picks it up.
 
 Prefer to keep the Action out of it? Delete
 `.github/workflows/ingest-inbox.yml`, `git pull` on the Mac, and the
@@ -158,6 +165,10 @@ delete:
 | `docs/index.html` | **generated** — the saved-convos index |
 | `docs/convos/<id>.html` | **generated** — one page per visible conversation |
 | `docs/assets/style.css` | the theme, hand-edited if you want a different look |
+
+Two workflows do the plumbing: `Deploy site` publishes `docs/` to Pages on
+every push to the default branch, and `Ingest inbox` converts anything landing
+in `inbox/` into a hidden draft.
 
 `./convo build` regenerates `docs/` from those two inputs. That means you can
 edit `docs/convos.json` by hand — on the Mac, or straight on github.com from
