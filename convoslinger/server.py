@@ -236,6 +236,7 @@ class Handler(BaseHTTPRequestHandler):
             "git": {
                 "branch": gitops.branch(),
                 "pending": gitops.pending(),
+                "unpushed": gitops.unpushed(),
                 "remote": gitops.remote_url(),
                 "pages_url": gitops.pages_url(),
             },
@@ -302,6 +303,9 @@ class Handler(BaseHTTPRequestHandler):
     def publish(self, payload: dict):
         site.build()
         result = gitops.publish(payload.get("message", ""))
+        # The phone gets one readable line; the full git output goes to the
+        # terminal running the app, where there is room for it.
+        print(f"\npublish: {result.get('summary', '')}\n{result.get('log', '')}\n")
         return self._json({**result, **self.state()})
 
     def describe(self, payload: dict):

@@ -52,8 +52,12 @@ function render() {
 
   const git = state.git || {};
   const dirty = (git.pending || []).length;
+  const waiting = git.unpushed || 0;
+  const bits = [];
+  if (dirty) bits.push(dirty + ' file(s) changed');
+  if (waiting) bits.push(waiting + ' commit(s) not pushed');
   $('#gitmeta').textContent =
-    `${git.branch || '?'} · ${dirty ? dirty + ' file(s) to publish' : 'nothing to publish'}`;
+    `${git.branch || '?'} · ${bits.length ? bits.join(', ') : 'nothing to publish'}`;
   $('#ai-new').hidden = !(state.ai && state.ai.available);
 
   renderInbox();
@@ -209,9 +213,9 @@ async function publish() {
   try {
     const data = await api('/api/publish', { message });
     adopt(data);
-    if (data.nothing_to_do) toast(data.log);
-    else if (data.ok) toast(`Published.\n${state.git.pages_url || ''}`);
-    else toast(`Publish failed:\n${data.log}`, true);
+    // One line here; the terminal running the app has the full git output.
+    if (data.ok && !data.nothing_to_do) toast(`${data.summary}\n${state.git.pages_url || ''}`);
+    else toast(data.summary, !data.ok);
   } catch (err) {
     toast(err.message, true);
   } finally {

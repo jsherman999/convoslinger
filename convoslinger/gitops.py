@@ -30,6 +30,15 @@ def pending() -> list[str]:
     return [line for line in out.splitlines() if line.strip()] if code == 0 else []
 
 
+def unpushed() -> int:
+    """Commits made here that the remote hasn't got — e.g. after a rejected push."""
+    code, out = _run(["rev-list", "--count", f"origin/{branch()}..HEAD"])
+    try:
+        return int(out) if code == 0 else 0
+    except ValueError:
+        return 0
+
+
 def pages_url() -> str:
     """Guess the GitHub Pages URL from the origin remote."""
     match = re.search(r"github\.com[:/]([^/]+)/([^/]+?)(?:\.git)?$", remote_url())
@@ -42,21 +51,63 @@ def pages_url() -> str:
 
 
 def publish(message: str = "") -> dict:
-    """Stage the site, commit, and push the current branch."""
-    steps = []
-    if not pending():
-        return {"ok": True, "nothing_to_do": True, "log": "Nothing to publish — working tree is clean."}
+    """Stage the site, commit, and push — rebasing onto the remote if needed.
 
-    code, out = _run(["add", "--", *TRACKED])
+    Returns {ok, summary, log}: `summary` is one line fit for a phone toast,
+    `log` is the full git output for the terminal.
+    """
+    steps: list[str] = []
+    current = branch()
+
+    def result(ok: bool, summary: str, **extra) -> dict:
+        return {"ok": ok, "summary": summary, "log": "\n".join(filter(None, steps)), **extra}
+
+    behind_only = not pending() and unpushed() > 0
+    if not pending() and not behind_only:
+        return result(True, "Nothing to publish — the site is already up to date.", nothing_to_do=True)
+
+    # A clean tree with unpushed commits means a previous push was rejected;
+    # there is nothing new to commit, but there is still something to push.
+    if not behind_only:
+        code, out = _run(["add", "--", *TRACKED])
+        steps.append(out)
+        if code != 0:
+            return result(False, "Could not stage the site files.")
+
+        code, out = _run(["commit", "-m", message.strip() or "Update saved conversations"])
+        steps.append(out)
+        if code != 0:
+            return result(False, "Commit failed.")
+
+    code, out = _run(["push", "-u", "origin", current])
+    steps.append(out)
+    if code == 0:
+        return result(True, "Published.")
+
+    # Someone else pushed to this branch first — very normal when the repo also
+    # carries the app's own code. Replay this commit on top and push again.
+    if "fetch first" not in out and "non-fast-forward" not in out and "rejected" not in out:
+        return result(False, "Push failed — see the terminal for git's output.")
+
+    steps.append("--- remote moved ahead, rebasing ---")
+    code, out = _run(["fetch", "origin", current])
     steps.append(out)
     if code != 0:
-        return {"ok": False, "log": "\n".join(filter(None, steps))}
+        return result(False, "Could not reach the remote. Check the network and press Publish again.")
 
-    code, out = _run(["commit", "-m", message.strip() or "Update saved conversations"])
+    code, out = _run(["rebase", "--autostash", f"origin/{current}"])
     steps.append(out)
     if code != 0:
-        return {"ok": False, "log": "\n".join(filter(None, steps))}
+        _run(["rebase", "--abort"])
+        return result(
+            False,
+            "The remote changed the same files. Your work is committed but not pushed — "
+            "run `git pull --rebase` in the repo and sort out the conflict, then Publish again.",
+            conflict=True,
+        )
 
-    code, out = _run(["push", "-u", "origin", branch()])
+    code, out = _run(["push", "-u", "origin", current])
     steps.append(out)
-    return {"ok": code == 0, "log": "\n".join(filter(None, steps))}
+    if code != 0:
+        return result(False, "Rebased onto the remote, but the push still failed. See the terminal.")
+    return result(True, "Published (after pulling in newer changes from the remote).", rebased=True)

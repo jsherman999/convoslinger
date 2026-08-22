@@ -132,11 +132,13 @@ def cmd_inbox(args) -> int:
 def cmd_publish(args) -> int:
     site.build()
     result = gitops.publish(args.message)
-    print(result["log"])
+    if result.get("log"):
+        print(result["log"])
+    print(f"\n{result.get('summary', '')}")
     if result.get("ok") and not result.get("nothing_to_do"):
         url = gitops.pages_url()
         if url:
-            print(f"\nlive shortly at {url}")
+            print(f"live shortly at {url}")
     return 0 if result.get("ok") else 1
 
 

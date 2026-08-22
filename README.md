@@ -149,7 +149,15 @@ What you can do without touching code:
   before it does, and nothing is written to `docs/` until you publish.
 - **Save & rebuild** — writes `docs/convos.json` and regenerates every page.
 - **Publish** — `git add` / `commit` / `push` on the current branch. The top
-  bar tells you how many files are waiting.
+  bar shows both what's changed and any commits still waiting to be pushed.
+
+  If someone else pushed to the branch first — likely, since this repo holds
+  the app's own code as well as your conversations — the push is rejected,
+  and Publish fetches, replays your commit on top, and pushes again by itself.
+  You only have to step in when both sides changed the same file; then it says
+  so, leaves your commit intact, and you resolve it with `git pull --rebase`.
+  A push that was rejected earlier is retried on the next Publish even though
+  there is nothing new to commit.
 - **✦** — if you have the `anthropic` SDK installed, asks Claude to write a
   title, synopsis and tags for that conversation. Optional; everything works
   without it.
