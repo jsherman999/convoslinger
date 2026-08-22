@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bioinformatics · saved convos</title>
+<meta name="description" content="That reframes it usefully — a Costa Rica field course with insects, plants, and bats almost certainly means DNA barcoding, not genome assembly. That&#x27;s good news: it&#x27;s the most tractable corner of bioinformatics, and Biopython is unusually…">
+<meta name="color-scheme" content="dark">
+<meta property="og:title" content="Bioinformatics · saved convos">
+<meta property="og:description" content="That reframes it usefully — a Costa Rica field course with insects, plants, and bats almost certainly means DNA barcoding, not genome assembly. That&#x27;s good news: it&#x27;s the most tractable corner of bioinformatics, and Biopython is unusually…">
+<meta property="og:type" content="article">
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body class="convo">
+<div class="wrap">
+<header class="page-head">
+<a class="back" href="../">&larr; saved convos</a>
+<h1>Bioinformatics</h1>
+<p class="meta"><time datetime="2026-08-22">2026-08-22</time></p>
+<p class="synopsis">That reframes it usefully — a Costa Rica field course with insects, plants, and bats almost certainly means DNA barcoding, not genome assembly. That&#x27;s good news: it&#x27;s the most tractable corner of bioinformatics, and Biopython is unusually…</p>
+</header>
+<main class="thread">
+<article class="turn note"><div class="body"><p>That reframes it usefully — a Costa Rica field course with insects, plants, and bats almost certainly means <strong>DNA barcoding</strong>, not genome assembly. That&#x27;s good news: it&#x27;s the most tractable corner of bioinformatics, and Biopython is unusually well-matched to it.</p><p>The workflow is short enough for a teen to hold in their head: sequence a standard marker region, compare it to a reference database, see whether the molecular ID matches the morphological one. For animals that marker is mitochondrial COI, matched against the Barcode of Life Data System, which assigns specimens Barcode Index Numbers algorithmically. Plants use rbcL, matK, or ITS2 instead — worth knowing, since the class will likely handle both.</p><p><strong>Miniforge sources:</strong></p><ul><li>The <a href="https://github.com/conda-forge/miniforge" rel="noopener noreferrer">conda-forge/miniforge README</a> is the canonical one. Signed, notarized PKG installers are available for macOS as of 2026 — and the project explicitly recommends against installing Miniforge via Homebrew, since the repackaging causes untested incompatibilities. Grab the Apple Silicon PKG.</li><li>For someone new to the concept, the BiA-PoL &quot;<a href="https://biapol.github.io/blog/mara_lampert/getting_started_with_miniforge_and_python/readme.html" rel="noopener noreferrer">Getting Started with Miniforge and Python</a>&quot; post is the friendliest walkthrough. Its one rule worth tattooing on the teen: never install into the base environment.</li></ul><p><strong>Biopython sources:</strong></p><ul><li>The <a href="https://biopython.org/docs/latest/Tutorial/" rel="noopener noreferrer">Tutorial &amp; Cookbook</a> is the real documentation, not a supplement. The current release is 1.87, from March 2026. One trap: older guides link to the old <code>biopython.org/DIST/docs/tutorial/</code> PDF, which is superseded — use the <code>/docs/latest/</code> path.</li><li>Chris Rands&#x27; Biopython Notebook tutorial (linked from biopython.org&#x27;s docs page) is Jupyter-native, which fits your setup.</li></ul><p>A starting environment:</p><div class="code-block"><span class="code-lang">bash</span><pre><code class="language-bash">conda create -n barcode -c conda-forge -c bioconda \
+  python=3.12 biopython jupyterlab pandas matplotlib \
+  mafft seqkit iqtree</code></pre></div><p>If any of those lack an arm64 build, that&#x27;s your OrbStack fallback — pull the biocontainer rather than fighting it.</p><p>The detail that&#x27;ll sell it: <code>Bio.SeqIO</code> reads <code>.ab1</code> chromatogram files directly — the exact format the sequencing facility hands back. Going from &quot;here&#x27;s the raw trace from my ant&quot; to a quality-trimmed sequence to a BLAST hit, in about fifteen lines, is a genuinely good first afternoon.</p><p>One practical thing to ask the instructor early: whether students get raw sequence data back at all, or just a spreadsheet of IDs. Costa Rica regulates genetic material access fairly tightly, and bats add vertebrate permitting on top. The answer determines whether you&#x27;re building an analysis environment or a data-exploration one — and it&#x27;s much better to know before you&#x27;ve provisioned the mini.</p></div></article>
+</main>
+<footer class="page-foot"><a href="../">&larr; all conversations</a></footer>
+</div>
+</body>
+</html>

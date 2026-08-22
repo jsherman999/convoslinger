@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>I&#x27;ve got a Postgres query that&#x27;s suddenly taking 12 seconds. · saved convos</title>
+<meta name="description" content="It was fine last week. Where do I even start?">
+<meta name="color-scheme" content="dark">
+<meta property="og:title" content="I&#x27;ve got a Postgres query that&#x27;s suddenly taking 12 seconds. · saved convos">
+<meta property="og:description" content="It was fine last week. Where do I even start?">
+<meta property="og:type" content="article">
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body class="convo">
+<div class="wrap">
+<header class="page-head">
+<a class="back" href="../">&larr; saved convos</a>
+<h1>I&#x27;ve got a Postgres query that&#x27;s suddenly taking 12 seconds.</h1>
+<p class="meta"><time datetime="2026-08-21">2026-08-21</time><span class="count">6 messages</span></p>
+<p class="synopsis">It was fine last week. Where do I even start?</p>
+</header>
+<main class="thread">
+<article class="turn user"><div class="who">You</div><div class="body"><p>I&#x27;ve got a Postgres query that&#x27;s suddenly taking 12 seconds. It was fine last week. Where do I even start?</p></div></article><article class="turn assistant"><div class="who">Claude</div><div class="body"><p>Start with <code>EXPLAIN (ANALYZE, BUFFERS)</code> on the actual query — not <code>EXPLAIN</code> alone, which only gives you the planner&#x27;s guess.</p><div class="code-block"><span class="code-lang">sql</span><pre><code class="language-sql">EXPLAIN (ANALYZE, BUFFERS)
+SELECT * FROM orders WHERE customer_id = 42 ORDER BY created_at DESC LIMIT 20;</code></pre></div><p>Three things to look for:</p><ol><li><strong>Seq Scan where you expected an Index Scan</strong> — usually means the planner&#x27;s row estimate is off.</li><li><strong>A big gap between <code>rows=</code> estimated and <code>actual rows=</code></strong> — stale statistics.</li><li><strong>High <code>read=</code> counts in BUFFERS</strong> — you&#x27;re going to disk instead of cache.</li></ol><p>If it worked last week and doesn&#x27;t now, stale statistics after a bulk load is the most common cause.</p></div></article><article class="turn user"><div class="who">You</div><div class="body"><p>The estimate says 12 rows, actual is 340000. So statistics?</p></div></article><article class="turn assistant"><div class="who">Claude</div><div class="body"><p>Almost certainly. Run:</p><div class="code-block"><span class="code-lang">sql</span><pre><code class="language-sql">ANALYZE orders;</code></pre></div><p>Then re-run the EXPLAIN. If the estimate snaps to something close to 340k, autovacuum wasn&#x27;t keeping up.</p><p>Longer term, either lower the autovacuum threshold for that table:</p><div class='table-wrap'><table><thead><tr><th>setting</th><th>default</th><th>suggested</th></tr></thead><tbody><tr><td><code>autovacuum_analyze_scale_factor</code></td><td>0.1</td><td>0.02</td></tr><tr><td><code>autovacuum_analyze_threshold</code></td><td>50</td><td>50</td></tr></tbody></table></div><p>or add an explicit <code>ANALYZE</code> at the end of whatever bulk-loads the table.</p></div></article><article class="turn user"><div class="who">You</div><div class="body"><p>That fixed it — 40ms now. Thanks.</p></div></article><article class="turn assistant"><div class="who">Claude</div><div class="body"><p>Nice. Worth adding a check to your load job so this doesn&#x27;t come back: if the loader inserts more than a few percent of the table, have it run <code>ANALYZE</code> before it exits.</p></div></article>
+</main>
+<footer class="page-foot"><a href="../">&larr; all conversations</a></footer>
+</div>
+</body>
+</html>
