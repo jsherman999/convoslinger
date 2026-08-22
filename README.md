@@ -28,23 +28,65 @@ Everything here is Python standard library and vanilla JS. There is nothing to
 git clone https://github.com/jsherman999/convoslinger
 cd convoslinger
 
-./convo add examples/example-conversation.md   # import a conversation
+./convo content --setup                        # check out the conversations
+./convo add examples/example-conversation.md   # import one
 ./convo manage                                 # open the management app
 ```
 
-One setup step, once: **Settings → Pages → Source: GitHub Actions**. From then
-on the `Deploy site` workflow publishes `docs/` on every push to the default
-branch, and pushing is publishing.
+One setup step, once: **Settings → Pages → Source: Deploy from a branch →
+`site` → `/docs`**. After that, pushing to `site` is publishing — no workflow
+in the loop.
 
-<sub>That one toggle can't be automated. Creating a Pages site requires
-`administration:write`, a scope the workflow's `GITHUB_TOKEN` cannot hold, so
-`actions/configure-pages` with `enablement: true` fails with *Resource not
-accessible by integration*. Deploying to a site that already exists only needs
-`pages:write`, which the workflow has. The settings page is web only — the
-GitHub mobile app doesn't expose repository settings — but it works fine in a
-phone browser.</sub>
+## Two branches
+
+The app's code and the conversations it publishes live on separate branches,
+because they change for unrelated reasons and used to collide on every push:
+
+| Branch | Holds |
+|---|---|
+| the default branch | the app — `convo`, `convoslinger/`, `tests/` |
+| `site` | `docs/`, `sources/`, `inbox/` — the published site and its sources |
+
+`./convo content --setup` checks `site` out as a **git worktree** at
+`content/`, inside the app checkout:
+
+```
+convoslinger/          the app
+  content/             worktree of `site` — gitignored here
+    docs/  sources/  inbox/
+```
+
+One clone, one `.git`, both branches checked out at once. Everything the app
+writes goes to `content/`, and Publish commits and pushes the `site` branch
+only — so publishing a conversation can never reject a code push, or vice
+versa. `./convo content` prints where things are; `CONVOSLINGER_CONTENT` puts
+the content anywhere you like. With neither, the app falls back to using the
+repository root, which is the old single-directory layout.
+
+<sub>Pages deploys straight from the branch rather than through Actions
+because the `github-pages` environment only permits deployments from the
+repository's default branch — a workflow deploying from `site` fails before
+its first step. Branch-source has no such restriction, and it means a push
+from the management app publishes with nothing in between.</sub>
 
 ---
+
+### Moving an existing checkout to the split layout
+
+If you cloned before the split, your checkout still has `docs/` and `sources/`
+next to the code. **Publish anything outstanding first** — the migration
+deletes those directories from the code branch:
+
+```bash
+cd ~/convoslinger
+./convo publish          # make sure nothing is left unpushed
+git pull --rebase        # picks up the removal and the new code
+./convo content --setup  # brings the conversations back at content/
+./convo content          # should print: content .../content, branch site
+```
+
+Nothing is lost either way: the conversations moved to the `site` branch, and
+the old commits still contain them.
 
 ## Getting a conversation off your phone
 
@@ -101,11 +143,6 @@ The `Ingest inbox` GitHub Action then converts anything landing in `inbox/`
 into a **hidden** draft and commits it. Hidden means exactly that: it is not on
 the index and its page is not generated. You review it on the Mac and flip it
 to shown when you want it public.
-
-One wrinkle: commits pushed by a workflow don't trigger other workflows, so
-an ingested draft won't redeploy the site on its own. That's harmless — drafts
-are hidden and don't change any published page — and your next push, or a
-manual run of `Deploy site`, picks it up.
 
 Prefer to keep the Action out of it? Delete
 `.github/workflows/ingest-inbox.yml`, `git pull` on the Mac, and the
@@ -198,6 +235,8 @@ run on café wifi. Stop the server when you're done rather than leaving it up.</
 Only two things are authoritative. Everything else is generated and safe to
 delete:
 
+All paths below are inside `content/` (the `site` branch):
+
 | Path | What it is |
 |---|---|
 | `sources/<id>.md\|jsonl\|html` | the raw export, exactly as you saved it |
@@ -206,9 +245,9 @@ delete:
 | `docs/convos/<id>.html` | **generated** — one page per visible conversation |
 | `docs/assets/style.css` | the theme, hand-edited if you want a different look |
 
-Two workflows do the plumbing: `Deploy site` publishes `docs/` to Pages on
-every push to the default branch, and `Ingest inbox` converts anything landing
-in `inbox/` into a hidden draft.
+One workflow does the plumbing: `Ingest inbox`, on the `site` branch, converts
+anything landing in `inbox/` into a hidden draft. It checks the app out beside
+the content to do it. Deploying needs no workflow at all.
 
 `./convo build` regenerates `docs/` from those two inputs. That means you can
 edit `docs/convos.json` by hand — on the Mac, or straight on github.com from
@@ -247,6 +286,7 @@ page before publishing either way: a scanner catches patterns, not judgement.
 ./convo edit <id>        --title --synopsis --date --tags
 ./convo rm <id>          delete it and its source
 ./convo build            regenerate docs/ from convos.json
+./convo content          where the conversations live  (--setup adds the worktree)
 ./convo inbox            list inbox files    (--take <file>|all, --hidden)
 ./convo publish -m "…"   build, commit, push
 ./convo manage           the management app  (--port, --no-open)

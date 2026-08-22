@@ -3,15 +3,21 @@
 import re
 import subprocess
 
-from .paths import ROOT
+from .paths import CONTENT
 
 TRACKED = ["docs", "sources", "inbox"]
 
 
 def _run(args: list[str]) -> tuple[int, str]:
-    proc = subprocess.run(
-        ["git", *args], cwd=ROOT, capture_output=True, text=True, timeout=180
-    )
+    """Run git where the content lives — the site worktree, not the app checkout."""
+    if not CONTENT.is_dir():
+        return 1, f"content directory not found: {CONTENT}"
+    try:
+        proc = subprocess.run(
+            ["git", *args], cwd=CONTENT, capture_output=True, text=True, timeout=180
+        )
+    except OSError as exc:
+        return 1, f"could not run git in {CONTENT}: {exc}"
     return proc.returncode, (proc.stdout + proc.stderr).strip()
 
 

@@ -13,9 +13,8 @@ from datetime import date
 
 from . import manifest as mf
 from . import parse, render, scrub
-from .paths import CONVOS_DIR, DOCS, INBOX, ROOT
+from .paths import CONTENT, CONVOS_DIR, DOCS, INBOX, SOURCES
 
-SOURCES = ROOT / "sources"
 EXT = {"markdown": ".md", "jsonl": ".jsonl", "html": ".html"}
 
 BACK_BAR = (
@@ -26,7 +25,7 @@ BACK_BAR = (
 
 
 def source_path(entry: dict):
-    return ROOT / entry["source_file"]
+    return CONTENT / entry["source_file"]
 
 
 def import_text(

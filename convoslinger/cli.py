@@ -6,7 +6,7 @@ from pathlib import Path
 
 from . import gitops
 from . import manifest as mf
-from . import site, summarize
+from . import paths, site, summarize
 
 
 def _tags(value: str) -> list:
@@ -180,6 +180,46 @@ def cmd_summary(args) -> int:
     return 0
 
 
+CONTENT_BRANCH = "site"
+
+
+def cmd_content(args) -> int:
+    """Show — or set up — the worktree the conversations live in."""
+    import subprocess
+
+    if args.setup:
+        if paths.CONTENT != paths.ROOT:
+            print(f"already set up at {paths.CONTENT}")
+            return 0
+        target = paths.ROOT / "content"
+        done = subprocess.run(
+            ["git", "worktree", "add", str(target), CONTENT_BRANCH],
+            cwd=paths.ROOT, capture_output=True, text=True,
+        )
+        print((done.stdout + done.stderr).strip())
+        if done.returncode != 0:
+            print(f"\ncouldn't add the worktree. Is `{CONTENT_BRANCH}` fetched? "
+                  f"Try `git fetch origin {CONTENT_BRANCH}` first.", file=sys.stderr)
+            return 1
+        print(f"\ncontent is now at {target} on the `{CONTENT_BRANCH}` branch")
+        return 0
+
+    print(f"app      {paths.ROOT}")
+    print(f"content  {paths.CONTENT}")
+    if not paths.CONTENT.is_dir():
+        print(f"\n  ! that directory does not exist.", file=sys.stderr)
+        print(f"    Unset CONVOSLINGER_CONTENT, or run `./convo content --setup`.", file=sys.stderr)
+        return 1
+    if paths.CONTENT == paths.ROOT:
+        print(f"\nContent and code share one directory (the single-branch layout).")
+        print(f"To split them: ./convo content --setup")
+    else:
+        print(f"branch   {gitops.branch()}")
+        if not paths.DOCS.is_dir():
+            print("\n  ! docs/ is missing — run `./convo build`", file=sys.stderr)
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="convo", description="publish saved Claude conversations")
     sub = parser.add_subparsers(dest="command", required=True)
@@ -244,6 +284,10 @@ def build_parser() -> argparse.ArgumentParser:
     manage.add_argument("--new-token", action="store_true", help="rotate the LAN token")
     manage.add_argument("--no-open", action="store_true")
     manage.set_defaults(func=cmd_manage)
+
+    content = sub.add_parser("content", help="where the conversations live")
+    content.add_argument("--setup", action="store_true", help=f"add the `{CONTENT_BRANCH}` worktree")
+    content.set_defaults(func=cmd_content)
 
     describe = sub.add_parser("summary", help="have Claude write a title/synopsis (needs anthropic SDK)")
     describe.add_argument("id")

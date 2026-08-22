@@ -1,5 +1,7 @@
 __pycache__/
 *.pyc
 .DS_Store
-inbox/imported/
 .manage-token
+
+# the site branch, checked out here as a git worktree
+content/
