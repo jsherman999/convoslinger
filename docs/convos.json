@@ -9,10 +9,13 @@
   "convos": [
     {
       "id": "2026-08-22-yes-almost-all-modern-floating-docks-are-sectional-and-8-foo",
-      "title": "Yes — almost all modern floating docks are sectional, and 8-foot is on…",
-      "synopsis": "Floating doc options",
+      "title": "Floating docks: what's available and what it costs",
+      "synopsis": "Sectional floating docks compared — poly float modules versus frame-and-float — with per-section pricing and which vendors carry them.",
       "date": "2026-08-22",
-      "tags": [],
+      "tags": [
+        "docks",
+        "shopping"
+      ],
       "path": "convos/2026-08-22-yes-almost-all-modern-floating-docks-are-sectional-and-8-foo.html",
       "visible": true,
       "pinned": false,
@@ -21,7 +24,8 @@
       "format": "markdown",
       "source_file": "sources/2026-08-22-yes-almost-all-modern-floating-docks-are-sectional-and-8-foo.md",
       "raw_html": false,
-      "include_thinking": false
+      "include_thinking": false,
+      "prompt": "What stores or vendors might have floating docks for sale near me, and how much do they cost? Are any sectional, meaning could I for example buy 8 foot sections and combine them?"
     },
     {
       "id": "2026-08-22-bioinformatics",
@@ -37,7 +41,8 @@
       "format": "markdown",
       "source_file": "sources/2026-08-22-bioinformatics.md",
       "raw_html": false,
-      "include_thinking": false
+      "include_thinking": false,
+      "prompt": ""
     },
     {
       "id": "2026-08-21-i-ve-got-a-postgres-query-that-s-suddenly-taking-12-seconds",
@@ -53,7 +58,8 @@
       "format": "markdown",
       "source_file": "sources/2026-08-21-i-ve-got-a-postgres-query-that-s-suddenly-taking-12-seconds.md",
       "raw_html": false,
-      "include_thinking": false
+      "include_thinking": false,
+      "prompt": ""
     }
   ]
 }
