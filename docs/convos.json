@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "site": {
+    "title": "saved convos",
+    "tagline": "conversations worth keeping",
+    "footer": "",
+    "sort": "date"
+  },
+  "convos": []
+}

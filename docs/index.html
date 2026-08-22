@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>saved convos</title>
+<meta name="description" content="conversations worth keeping">
+<meta name="color-scheme" content="dark">
+<meta property="og:title" content="saved convos">
+<meta property="og:description" content="conversations worth keeping">
+<meta property="og:type" content="article">
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body class="index">
+<div class="wrap">
+<header class="site-head">
+<h1>saved convos</h1>
+<p class="tagline">conversations worth keeping</p>
+</header>
+
+<main>
+<p class="empty">Nothing published yet.</p>
+</main>
+<footer class="site-foot"></footer>
+</div>
+<script>
+(function () {
+  var q = document.getElementById('q');
+  if (!q) return;
+  var items = Array.prototype.slice.call(document.querySelectorAll('.item'));
+  var hits = document.getElementById('hits');
+  function apply() {
+    var term = q.value.trim().toLowerCase();
+    var shown = 0;
+    items.forEach(function (li) {
+      var match = !term || li.dataset.search.indexOf(term) !== -1;
+      li.hidden = !match;
+      if (match) shown++;
+    });
+    hits.textContent = term ? shown + ' of ' + items.length : '';
+  }
+  q.addEventListener('input', apply);
+  document.addEventListener('click', function (e) {
+    var tag = e.target.closest('.tag');
+    if (!tag) return;
+    q.value = q.value.trim() === tag.dataset.tag ? '' : tag.dataset.tag;
+    apply();
+    q.focus();
+  });
+})();
+</script>
+</body>
+</html>
