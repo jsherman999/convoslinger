@@ -255,13 +255,14 @@ async function add() {
       title: $('#new-title').value,
       date: $('#new-date').value,
       synopsis: $('#new-synopsis').value,
+      prompt: $('#new-prompt').value,
       tags: $('#new-tags').value.split(',').map((t) => t.trim()).filter(Boolean),
       visible: $('#new-visible').checked,
       scrub: $('#new-scrub').checked,
       thinking: $('#new-thinking').checked,
     });
     adopt(data);
-    ['#paste', '#new-title', '#new-synopsis', '#new-tags'].forEach((s) => { $(s).value = ''; });
+    ['#paste', '#new-title', '#new-synopsis', '#new-tags', '#new-prompt'].forEach((s) => { $(s).value = ''; });
     pending = null;
     $('#add-note').textContent = '';
     const found = data.findings || [];

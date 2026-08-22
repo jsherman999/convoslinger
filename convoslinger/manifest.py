@@ -51,7 +51,7 @@ def save(manifest: dict) -> None:
 KNOWN = {
     "id", "title", "synopsis", "date", "tags", "path", "visible",
     "pinned", "source", "added", "format", "source_file", "raw_html",
-    "include_thinking",
+    "include_thinking", "prompt",
 }
 
 
@@ -71,6 +71,10 @@ def normalize(entry: dict) -> dict:
         "source_file": entry.get("source_file") or f"sources/{entry.get('id', 'untitled')}.md",
         "raw_html": bool(entry.get("raw_html", False)),
         "include_thinking": bool(entry.get("include_thinking", False)),
+        # The Claude app copies a single reply, so the question that prompted
+        # it usually has to be supplied separately. Kept here rather than
+        # edited into the source file, which stays exactly as exported.
+        "prompt": (entry.get("prompt") or "").strip(),
     }
     # Anything hand-added to the JSON survives a round-trip untouched.
     out.update({k: v for k, v in entry.items() if k not in KNOWN})

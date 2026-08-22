@@ -110,6 +110,20 @@ convoslinger looks for speaker markers (`Human:`, `Assistant:`, `You:`,
 keeps the whole thing as a single block and still renders the markdown — you
 never lose content to a parsing failure.
 
+**Copying from the Claude app gives you one message — Claude's reply — not the
+whole exchange.** Your question isn't in it, so there are no speaker markers to
+find, and a title guessed from that text is the first sentence of an answer
+("Yes — almost all modern floating docks are sectional…"). Paste what you asked
+into the **Your question** box when you import (or `--prompt` from the CLI) and
+the page becomes a proper exchange, with the title and synopsis taken from the
+question instead. It's stored in `convos.json`, not edited into your export, so
+`sources/` stays exactly as the app gave it to you and you can fix the wording
+later with `./convo edit --prompt`.
+
+Worth checking the preview either way: the app's copy also drops some
+structured content — a list of dealers in one of mine came through as a
+heading with nothing under it.
+
 ### 2. Save an HTML file and publish it as-is
 
 Already have an `.html` file — from a share sheet, a print-to-file, or anywhere

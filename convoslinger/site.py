@@ -39,6 +39,7 @@ def import_text(
     visible: bool = True,
     include_thinking: bool = False,
     raw_html: bool = False,
+    prompt: str = "",
 ) -> tuple[dict, list]:
     """Add one conversation. Returns (entry, possible-secret findings)."""
     findings = scrub.scan(text)
@@ -47,6 +48,13 @@ def import_text(
 
     fmt = parse.detect_format(text, filename)
     turns = [] if fmt == "html" else parse.parse(text, filename, include_thinking)
+    prompt = (prompt or "").strip()
+    if prompt and turns:
+        # Title and synopsis should come from the question, not from the answer.
+        turns = [parse.turn("user", prompt)] + [
+            parse.turn("assistant", t["text"], t["kind"], t["label"]) if t["role"] == "note" else t
+            for t in turns
+        ]
 
     manifest = mf.load()
     when = when or date.today().isoformat()
@@ -67,6 +75,7 @@ def import_text(
             "path": f"convos/{convo_id}.html",
             "visible": visible,
             "source": {"jsonl": "claude-code", "html": "html", "markdown": "claude-app"}[fmt],
+            "prompt": prompt,
         }
     )
     entry["format"] = fmt
@@ -80,6 +89,26 @@ def import_text(
     mf.save(manifest)
     build(manifest)
     return entry, findings
+
+
+def turns_for(entry: dict, text: str | None = None) -> list:
+    """Parse an entry's source into turns, prepending its question if it has one.
+
+    An export that carries only Claude's reply parses to a single unattributed
+    block; given a question it becomes a proper two-turn exchange.
+    """
+    src = source_path(entry)
+    if text is None:
+        text = src.read_text(encoding="utf-8", errors="replace")
+    turns = parse.parse(text, src.name, entry.get("include_thinking", False))
+    question = (entry.get("prompt") or "").strip()
+    if not question:
+        return turns
+    body = [
+        parse.turn("assistant", t["text"], t["kind"], t["label"]) if t["role"] == "note" else t
+        for t in turns
+    ]
+    return [parse.turn("user", question)] + body
 
 
 def render_entry(entry: dict, site: dict) -> None:
@@ -103,12 +132,9 @@ def render_entry(entry: dict, site: dict) -> None:
         target.write_text(page, encoding="utf-8")
         return
 
-    turns = parse.parse(
-        src.read_text(encoding="utf-8", errors="replace"),
-        src.name,
-        include_thinking=entry.get("include_thinking", False),
+    target.write_text(
+        render.render_convo_page(entry, turns_for(entry), site), encoding="utf-8"
     )
-    target.write_text(render.render_convo_page(entry, turns, site), encoding="utf-8")
 
 
 def build(manifest: dict | None = None) -> dict:

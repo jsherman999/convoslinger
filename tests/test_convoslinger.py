@@ -79,6 +79,28 @@ class Parsing(unittest.TestCase):
         self.assertNotIn("Fix the build", parse.auto_synopsis(turns, skip=title))
 
 
+class SingleReplyExports(unittest.TestCase):
+    """The Claude phone app copies one message, not a transcript."""
+
+    REPLY = "Yes — almost all modern floating docks are sectional.\n\nTwo approaches exist."
+
+    def test_a_bare_reply_parses_to_one_unattributed_block(self):
+        turns = parse.parse(self.REPLY)
+        self.assertEqual([t["role"] for t in turns], ["note"])
+
+    def test_title_without_a_question_comes_from_the_answer(self):
+        # Which is the wrong end of the exchange — hence the prompt field.
+        self.assertTrue(parse.auto_title(parse.parse(self.REPLY)).startswith("Yes"))
+
+    def test_a_supplied_question_makes_it_an_exchange(self):
+        turns = parse.parse(self.REPLY)
+        rebuilt = [parse.turn("user", "Where can I buy floating docks?")] + [
+            parse.turn("assistant", t["text"]) if t["role"] == "note" else t for t in turns
+        ]
+        self.assertEqual([t["role"] for t in rebuilt], ["user", "assistant"])
+        self.assertEqual(parse.auto_title(rebuilt), "Where can I buy floating docks?")
+
+
 class Secrets(unittest.TestCase):
     def test_keys_are_redacted(self):
         text, hits = scrub.scrub("token sk-ant-api03-" + "A" * 24)

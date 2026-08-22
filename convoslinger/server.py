@@ -216,8 +216,9 @@ class Handler(BaseHTTPRequestHandler):
         if entry.get("format") == "html":
             page = text
         else:
-            turns = parse.parse(text, source.name, entry.get("include_thinking", False))
-            page = render.render_convo_page(entry, turns, manifest["site"])
+            page = render.render_convo_page(
+                entry, site.turns_for(entry, text), manifest["site"]
+            )
         body = page.encode("utf-8")
         self.send_response(200)
         self.send_header("Content-Type", "text/html; charset=utf-8")
@@ -251,7 +252,7 @@ class Handler(BaseHTTPRequestHandler):
             entry = by_id.get(incoming.get("id"))
             if not entry:
                 continue
-            for field in ("title", "synopsis", "date"):
+            for field in ("title", "synopsis", "date", "prompt"):
                 if incoming.get(field) is not None:
                     entry[field] = str(incoming[field]).strip()
             if incoming.get("tags") is not None:
@@ -282,6 +283,7 @@ class Handler(BaseHTTPRequestHandler):
             visible=payload.get("visible", True),
             include_thinking=payload.get("thinking", False),
             raw_html=payload.get("raw", False),
+            prompt=payload.get("prompt", ""),
         )
         return self._json({"ok": True, "entry": entry, "findings": findings, **self.state()})
 

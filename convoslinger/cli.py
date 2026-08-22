@@ -40,6 +40,7 @@ def cmd_add(args) -> int:
         visible=not args.hidden,
         include_thinking=args.thinking,
         raw_html=args.raw,
+        prompt=args.prompt or "",
     )
     _report(entry, findings)
     return 0
@@ -91,6 +92,7 @@ def cmd_edit(args) -> int:
         synopsis=args.synopsis,
         date=args.date,
         tags=_tags(args.tags) if args.tags is not None else None,
+        prompt=args.prompt,
     )
 
 
@@ -228,6 +230,7 @@ def build_parser() -> argparse.ArgumentParser:
     add.add_argument("file")
     add.add_argument("--title")
     add.add_argument("--synopsis")
+    add.add_argument("--prompt", help="the question you asked, if the export is only the reply")
     add.add_argument("--date", help="YYYY-MM-DD (defaults to today)")
     add.add_argument("--tags", default="", help="comma separated")
     add.add_argument("--hidden", action="store_true", help="import without publishing it")
@@ -258,6 +261,7 @@ def build_parser() -> argparse.ArgumentParser:
     edit.add_argument("--synopsis")
     edit.add_argument("--date")
     edit.add_argument("--tags")
+    edit.add_argument("--prompt", help="the question you asked")
     edit.set_defaults(func=cmd_edit)
 
     remove = sub.add_parser("rm", help="delete a conversation entirely")
