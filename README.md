@@ -27,11 +27,13 @@ Everything here is Python standard library and vanilla JS. There is nothing to
 ```bash
 git clone https://github.com/jsherman999/convoslinger
 cd convoslinger
-
-./convo content --setup                        # check out the conversations
-./convo add examples/example-conversation.md   # import one
-./convo manage                                 # open the management app
+./convo content --setup
+./convo add examples/example-conversation.md
+./convo manage
 ```
+
+That checks out the conversations, imports an example, and opens the
+management app.
 
 One setup step, once: **Settings → Pages → Source: Deploy from a branch →
 `site` → `/docs`**. After that, pushing to `site` is publishing — no workflow
@@ -78,12 +80,15 @@ next to the code. **Publish anything outstanding first** — the migration
 deletes those directories from the code branch:
 
 ```bash
-cd ~/convoslinger
-./convo publish          # make sure nothing is left unpushed
-git pull --rebase        # picks up the removal and the new code
-./convo content --setup  # brings the conversations back at content/
-./convo content          # should print: content .../content, branch site
+./convo publish
+git pull --rebase
+./convo content --setup
+./convo content
 ```
+
+In order: publish anything still unpushed, pull the removal and the new code,
+bring the conversations back at `content/`, and confirm — the last command
+should report `branch site`.
 
 Nothing is lost either way: the conversations moved to the `site` branch, and
 the old commits still contain them.
@@ -167,8 +172,10 @@ dropped unless you pass `--thinking`.
 ## The management app
 
 ```bash
-./convo manage          # http://127.0.0.1:7788
+./convo manage
 ```
+
+It serves at `http://127.0.0.1:7788`.
 
 It binds to localhost only, and every write requires a custom header that a
 cross-origin page cannot send, so a random tab you have open can't drive it.
@@ -272,6 +279,8 @@ page before publishing either way: a scanner catches patterns, not judgement.
 
 ## Command line
 
+This block is a reference listing, not something to paste.
+
 ```
 ./convo add <file>       import a .md / .txt / .jsonl / .html conversation
                            --title --synopsis --date --tags a,b
@@ -300,8 +309,10 @@ page before publishing either way: a scanner catches patterns, not judgement.
 
 ```bash
 pip install anthropic
-export ANTHROPIC_API_KEY=...      # or: ant auth login
+export ANTHROPIC_API_KEY=...
 ```
+
+Or run `ant auth login` instead of exporting a key.
 
 `./convo summary <id>` and the ✦ button then return a title, a one-sentence
 synopsis and a couple of tags. Nothing is saved until you save it, and the
